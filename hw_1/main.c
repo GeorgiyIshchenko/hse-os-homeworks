@@ -5,8 +5,7 @@
 
 int main()
 {
-  int     fd[2], result;
-  size_t  size;
+  int fd[2], result;
 
   if (pipe(fd) < 0) {
     perror("Can\'t open pipe\n");
@@ -26,25 +25,15 @@ int main()
       perror("child: Can\'t close writing side of pipe\n"); exit(-1);
     }
 
-    char resstring[13];
+    printf("Executing parent...\n");
 
-    size = read(fd[0], resstring, 13);
+    char readDescriptor[10];
+    snprintf(readDescriptor, 10, "%d", fd[0]);
 
-    if (size < 0) {
-      perror("Can\'t read string from pipe\n");
-      exit(-1);
-    }
-
-    if (close(fd[0]) < 0) {
-      perror("parent: Can\'t close reading side of pipe\n"); exit(-1);
-    }
-
-    printf("Parent read, string: %s\n", resstring);
-
-    int exitCode = execl("/bin/echo", "echo", resstring, NULL);
+    int exitCode = execl("reader.out", "reader.out", readDescriptor, NULL);
 
     if (exitCode) {
-      perror("Parent exec cat with error!\n");
+      perror("Parent exec reader.out ended with error!");
     }
 
   } else {
@@ -55,16 +44,15 @@ int main()
       perror("parent: Can\'t close reading side of pipe\n"); exit(-1);
     }
 
-    if (dup2(fd[1], STDOUT_FILENO) == -1) {
-      perror("Dup2 stdout error!\n");
-      close(fd[1]);
-      exit(-1);
-    }
+    printf("Executing child...\n");
 
-    int exitCode = execl("/bin/echo", "echo", "SOME_MESSAGE", NULL);
+    char writeDescriptor[10];
+    snprintf(writeDescriptor, 10, "%d", fd[1]);
+
+    int exitCode = execl("writer.out", "writer.out", writeDescriptor, NULL);
 
     if (exitCode) {
-      perror("Child exec echo with error!\n");
+      perror("Child exec writer.out ended with error!");
     }
 
   }
